@@ -1,13 +1,13 @@
 import { motion } from "framer-motion";
-import { ArrowUpRight, Calendar, MapPin } from "lucide-react";
+import { Calendar, LockKeyhole, MapPin } from "lucide-react";
 import type { ClubEvent } from "../data/events";
 
 interface EventCardProps {
   event: ClubEvent;
-  onViewDetails: (event: ClubEvent) => void;
+  onLoginRequired: () => void;
 }
 
-export default function EventCard({ event, onViewDetails }: EventCardProps) {
+export default function EventCard({ event, onLoginRequired }: EventCardProps) {
   const isAarambh = event.id === "datathon-2026";
   const formattedDate = new Date(event.date).toLocaleDateString("en-IN", {
     day: "numeric",
@@ -23,6 +23,7 @@ export default function EventCard({ event, onViewDetails }: EventCardProps) {
       transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
       className="group flex flex-col overflow-hidden rounded-xl border border-[#d8b56a]/35 bg-[#100e0b] transition-all duration-300 hover:border-[#f0ce82]/70"
       data-cursor-hover
+      onClick={onLoginRequired}
     >
       <div
         className={`relative overflow-hidden ${isAarambh ? "aspect-[1240/634] bg-[#100e0b]" : "h-52 bg-espresso"}`}
@@ -50,20 +51,21 @@ export default function EventCard({ event, onViewDetails }: EventCardProps) {
 
         <div className="mt-5 flex items-center justify-between border-t border-beige/15 pt-4">
           <button
-            onClick={() => onViewDetails(event)}
             className="text-sm font-semibold text-gold underline decoration-transparent underline-offset-4 transition-all duration-300 hover:decoration-gold"
           >
-            View details
+            <span className="inline-flex items-center gap-1.5">
+              <LockKeyhole size={13} /> Login to view details
+            </span>
           </button>
           {event.registrationUrl && event.status !== "past" && (
-            <a
-              href={event.registrationUrl}
+            <button
+              type="button"
               className={`flex items-center gap-1 rounded-full px-4 py-2 text-xs font-semibold transition-transform duration-300 group-hover:-translate-y-0.5 ${
                 "bg-[#d9b467] text-[#171109]"
               }`}
             >
-              Register <ArrowUpRight size={13} />
-            </a>
+              Login to register <LockKeyhole size={13} />
+            </button>
           )}
         </div>
       </div>

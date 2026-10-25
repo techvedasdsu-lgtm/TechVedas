@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { LogIn, Menu, X } from "lucide-react";
 import Logo from "./Logo";
+
+interface NavbarProps {
+  onLoginClick: () => void;
+}
 
 const NAV_ITEMS = [
   { label: "Home", href: "#home" },
@@ -12,7 +16,7 @@ const NAV_ITEMS = [
   { label: "Contact", href: "#contact" },
 ];
 
-export default function Navbar() {
+export default function Navbar({ onLoginClick }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [active, setActive] = useState("#home");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -55,9 +59,9 @@ export default function Navbar() {
           className="flex w-full max-w-[1180px] items-center justify-between rounded-[30px] border px-5 text-cream shadow-[0_10px_30px_rgba(0,0,0,0.28)]"
           style={{ backdropFilter: scrolled ? "blur(14px)" : "blur(10px)" }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Logo height={scrolled ? 42 : 52} className="transition-all duration-500" />
-            <span className="text-[10px] font-medium uppercase tracking-[0.22em] text-[#f1d29a]">
+            <span className="hidden text-[10px] font-medium uppercase tracking-[0.22em] text-[#f1d29a] sm:inline">
               CSE (AI &amp; DS)
             </span>
           </div>
@@ -82,13 +86,22 @@ export default function Navbar() {
             ))}
           </ul>
 
-          <button
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            className="text-cream md:hidden"
-            onClick={() => setMenuOpen((v) => !v)}
-          >
-            {menuOpen ? <X size={26} /> : <Menu size={26} />}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onLoginClick}
+              className="inline-flex items-center gap-2 rounded-full border border-gold/60 px-4 py-2 text-xs font-semibold text-gold transition-colors hover:bg-gold hover:text-espresso sm:px-5 sm:text-sm"
+            >
+              <LogIn size={16} />
+              Login
+            </button>
+            <button
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              className="text-cream md:hidden"
+              onClick={() => setMenuOpen((v) => !v)}
+            >
+              {menuOpen ? <X size={26} /> : <Menu size={26} />}
+            </button>
+          </div>
         </motion.nav>
       </header>
 
@@ -114,6 +127,15 @@ export default function Navbar() {
                 {item.label}
               </motion.a>
             ))}
+            <button
+              onClick={() => {
+                setMenuOpen(false);
+                onLoginClick();
+              }}
+              className="rounded-full border border-gold/60 px-6 py-3 text-lg font-semibold text-gold"
+            >
+              Login
+            </button>
           </motion.div>
         )}
       </AnimatePresence>

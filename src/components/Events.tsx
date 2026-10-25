@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { events as allEvents, type ClubEvent } from "../data/events";
+import { events as allEvents } from "../data/events";
 import { useEventFilter } from "../hooks/useEventFilter";
 import EventFilter from "./EventFilter";
 import EventCard from "./EventCard";
-import EventDetails from "./EventDetails";
 
 const VISIBLE_CATEGORIES = new Set(["Workshops", "Hackathons"]);
 
-export default function Events() {
+interface EventsProps {
+  onLoginRequired: () => void;
+}
+
+export default function Events({ onLoginRequired }: EventsProps) {
   const upcoming = allEvents.filter(
     (e) => e.status !== "past" && VISIBLE_CATEGORIES.has(e.category)
   );
@@ -19,7 +22,6 @@ export default function Events() {
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
   const source = tab === "upcoming" ? upcoming : past;
   const { filter, setFilter, filtered } = useEventFilter(source);
-  const [selected, setSelected] = useState<ClubEvent | null>(null);
 
   return (
     <section id="events" className="relative bg-[#0B1320]/35 backdrop-blur-sm py-28 border-b border-gold/15 text-cream">
@@ -58,7 +60,7 @@ export default function Events() {
             className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
           >
             {filtered.map((event) => (
-              <EventCard key={event.id} event={event} onViewDetails={setSelected} />
+              <EventCard key={event.id} event={event} onLoginRequired={onLoginRequired} />
             ))}
           </motion.div>
         </AnimatePresence>
@@ -68,9 +70,6 @@ export default function Events() {
         )}
       </div>
 
-      <AnimatePresence>
-        {selected && <EventDetails event={selected} onClose={() => setSelected(null)} />}
-      </AnimatePresence>
     </section>
   );
 }
