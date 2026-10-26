@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { LogIn, Menu, X } from "lucide-react";
+import { LogIn, LogOut, Menu, ShieldCheck, User, X } from "lucide-react";
 import Logo from "./Logo";
+import { useAuth } from "../context/AuthContext";
 
 interface NavbarProps {
   onLoginClick: () => void;
+  onAdminClick?: () => void;
 }
 
 const NAV_ITEMS = [
@@ -16,10 +18,11 @@ const NAV_ITEMS = [
   { label: "Contact", href: "#contact" },
 ];
 
-export default function Navbar({ onLoginClick }: NavbarProps) {
+export default function Navbar({ onLoginClick, onAdminClick }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [active, setActive] = useState("#home");
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user, profile, role, signOut } = useAuth();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -86,14 +89,60 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
             ))}
           </ul>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onLoginClick}
-              className="inline-flex items-center gap-2 rounded-full border border-gold/60 px-4 py-2 text-xs font-semibold text-gold transition-colors hover:bg-gold hover:text-espresso sm:px-5 sm:text-sm"
-            >
-              <LogIn size={16} />
-              Login
-            </button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            {user ? (
+              <div className="flex items-center gap-2 sm:gap-3">
+                {role === "admin" && (
+                  <button
+                    type="button"
+                    onClick={onAdminClick}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-gold/60 bg-gold/10 px-3 py-1.5 text-xs font-bold text-gold transition-colors hover:bg-gold hover:text-espresso"
+                  >
+                    <ShieldCheck size={14} />
+                    <span className="hidden sm:inline">Admin Panel</span>
+                  </button>
+                )}
+
+                <div className="flex items-center gap-2 rounded-full border border-gold/40 bg-brown/50 px-3 py-1.5">
+                  {user.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt={user.displayName || "User"}
+                      className="h-6 w-6 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-terracotta/20 text-xs font-semibold text-terracotta">
+                      {role === "admin" ? <ShieldCheck size={14} /> : <User size={14} />}
+                    </div>
+                  )}
+                  <span className="max-w-[100px] truncate text-xs font-medium text-cream sm:max-w-[130px]">
+                    {profile?.displayName || user.displayName || user.email?.split("@")[0]}
+                  </span>
+                  {role === "admin" && (
+                    <span className="rounded bg-gold/20 px-1.5 py-0.5 text-[10px] font-bold text-gold uppercase tracking-wider">
+                      Admin
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => signOut()}
+                  title="Sign out"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-beige/20 text-beige/70 transition-colors hover:border-terracotta hover:bg-terracotta/10 hover:text-terracotta"
+                >
+                  <LogOut size={14} />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={onLoginClick}
+                className="inline-flex items-center gap-2 rounded-full border border-gold/60 px-4 py-2 text-xs font-semibold text-gold transition-colors hover:bg-gold hover:text-espresso sm:px-5 sm:text-sm"
+              >
+                <LogIn size={16} />
+                Login
+              </button>
+            )}
             <button
               aria-label={menuOpen ? "Close menu" : "Open menu"}
               className="text-cream md:hidden"
@@ -112,7 +161,7 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-8 bg-espresso"
+            className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-6 bg-espresso px-6"
           >
             {NAV_ITEMS.map((item, i) => (
               <motion.a
@@ -122,20 +171,45 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.08 * i, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                className="font-display text-4xl text-cream"
+                className="font-display text-3xl text-cream"
               >
                 {item.label}
               </motion.a>
             ))}
-            <button
-              onClick={() => {
-                setMenuOpen(false);
-                onLoginClick();
-              }}
-              className="rounded-full border border-gold/60 px-6 py-3 text-lg font-semibold text-gold"
-            >
-              Login
-            </button>
+
+            {user && role === "admin" && (
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  onAdminClick?.();
+                }}
+                className="inline-flex items-center gap-2 rounded-full border border-gold bg-gold/20 px-6 py-2.5 text-base font-semibold text-gold"
+              >
+                <ShieldCheck size={18} /> Admin Control Panel
+              </button>
+            )}
+
+            {user ? (
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  signOut();
+                }}
+                className="rounded-full border border-terracotta/60 px-6 py-2.5 text-base font-semibold text-terracotta"
+              >
+                Sign out ({user.displayName || user.email})
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  onLoginClick();
+                }}
+                className="rounded-full border border-gold/60 px-6 py-2.5 text-base font-semibold text-gold"
+              >
+                Login
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

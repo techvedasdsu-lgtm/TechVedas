@@ -1,0 +1,85 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile in Tech Vedas",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The user ID matching auth UID" },
+        "email": { "type": "string", "format": "email", "description": "User email address" },
+        "displayName": { "type": "string", "maxLength": 100, "description": "User display name" },
+        "photoURL": { "type": "string", "maxLength": 500, "description": "Profile picture URL" },
+        "role": { "type": "string", "enum": ["admin", "member"], "description": "User role" },
+        "createdAt": { "type": "string", "description": "Account creation timestamp" },
+        "lastLoginAt": { "type": "string", "description": "Last sign-in timestamp" }
+      },
+      "required": ["id", "email", "role", "createdAt"]
+    },
+    "LoginRecord": {
+      "title": "LoginRecord",
+      "description": "Log of user sign-ins and authentication history",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Login record ID" },
+        "userId": { "type": "string", "description": "User UID" },
+        "email": { "type": "string", "format": "email", "description": "User email address" },
+        "displayName": { "type": "string", "maxLength": 100, "description": "User display name" },
+        "role": { "type": "string", "enum": ["admin", "member"], "description": "User role" },
+        "loginMethod": { "type": "string", "maxLength": 50, "description": "Authentication provider" },
+        "loggedInAt": { "type": "string", "description": "Timestamp of login" }
+      },
+      "required": ["id", "userId", "email", "role", "loggedInAt"]
+    },
+    "EventRegistration": {
+      "title": "EventRegistration",
+      "description": "Registration for a Tech Vedas event",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Registration ID" },
+        "userId": { "type": "string", "description": "Registered user ID" },
+        "userEmail": { "type": "string", "format": "email", "description": "Registered user email" },
+        "userName": { "type": "string", "maxLength": 100, "description": "Participant name" },
+        "eventId": { "type": "string", "maxLength": 100, "description": "Target event ID" },
+        "eventTitle": { "type": "string", "maxLength": 200, "description": "Target event title" },
+        "registeredAt": { "type": "string", "description": "Registration timestamp" }
+      },
+      "required": ["id", "userId", "userEmail", "userName", "eventId", "eventTitle", "registeredAt"]
+    },
+    "ContactMessage": {
+      "title": "ContactMessage",
+      "description": "Inquiry or message sent through the contact form",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Message ID" },
+        "name": { "type": "string", "maxLength": 100, "description": "Sender name" },
+        "email": { "type": "string", "format": "email", "description": "Sender email" },
+        "subject": { "type": "string", "maxLength": 200, "description": "Message subject" },
+        "message": { "type": "string", "maxLength": 2000, "description": "Message body" },
+        "createdAt": { "type": "string", "description": "Submission timestamp" }
+      },
+      "required": ["id", "name", "email", "subject", "message", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profile collection"
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Admin collection whitelist"
+    },
+    "/logins/{loginId}": {
+      "schema": { "$ref": "#/entities/LoginRecord" },
+      "description": "Login history and audit records"
+    },
+    "/registrations/{registrationId}": {
+      "schema": { "$ref": "#/entities/EventRegistration" },
+      "description": "Event registrations"
+    },
+    "/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ContactMessage" },
+      "description": "Contact form submissions"
+    }
+  }
+}

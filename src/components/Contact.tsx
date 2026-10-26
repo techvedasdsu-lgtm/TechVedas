@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { motion } from "framer-motion";
 import { Building2, Loader2, Mail, MapPin, Send } from "lucide-react";
+import { doc, setDoc } from "firebase/firestore";
 import { InstagramIcon } from "./BrandIcons";
+import { db } from "../lib/firebase";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -34,7 +36,7 @@ export default function Contact() {
     return next;
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
     const validation = validate(form);
@@ -42,7 +44,33 @@ export default function Contact() {
     if (Object.keys(validation).length > 0) return;
 
     setStatus("loading");
-    HTMLFormElement.prototype.submit.call(form);
+    const data = new FormData(form);
+    const name = String(data.get("name") || "").trim();
+    const email = String(data.get("email") || "").trim();
+    const subject = String(data.get("subject") || "").trim();
+    const message = String(data.get("message") || "").trim();
+
+    const messageId = `msg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    try {
+      await setDoc(doc(db, "messages", messageId), {
+        id: messageId,
+        name,
+        email,
+        subject,
+        message,
+        createdAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.warn("Firestore message save notice:", err);
+      // Non-blocking for user experience if offline
+    }
+
+    try {
+      HTMLFormElement.prototype.submit.call(form);
+    } catch (err) {
+      console.warn("Form target submit notice:", err);
+    }
+
     setStatus("success");
     form.reset();
   };

@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { events as allEvents } from "../data/events";
+import { events as allEvents, type ClubEvent } from "../data/events";
 import { useEventFilter } from "../hooks/useEventFilter";
 import EventFilter from "./EventFilter";
 import EventCard from "./EventCard";
+import EventDetails from "./EventDetails";
 
 const VISIBLE_CATEGORIES = new Set(["Workshops", "Hackathons"]);
 
@@ -20,6 +21,7 @@ export default function Events({ onLoginRequired }: EventsProps) {
   );
 
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
+  const [selectedEvent, setSelectedEvent] = useState<ClubEvent | null>(null);
   const source = tab === "upcoming" ? upcoming : past;
   const { filter, setFilter, filtered } = useEventFilter(source);
 
@@ -60,7 +62,12 @@ export default function Events({ onLoginRequired }: EventsProps) {
             className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
           >
             {filtered.map((event) => (
-              <EventCard key={event.id} event={event} onLoginRequired={onLoginRequired} />
+              <EventCard
+                key={event.id}
+                event={event}
+                onLoginRequired={onLoginRequired}
+                onSelectEvent={(ev) => setSelectedEvent(ev)}
+              />
             ))}
           </motion.div>
         </AnimatePresence>
@@ -70,6 +77,9 @@ export default function Events({ onLoginRequired }: EventsProps) {
         )}
       </div>
 
+      {selectedEvent && (
+        <EventDetails event={selectedEvent} onClose={() => setSelectedEvent(null)} />
+      )}
     </section>
   );
 }

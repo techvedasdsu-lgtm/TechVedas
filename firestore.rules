@@ -1,0 +1,140 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token.email != null && request.auth.token.email.matches('(?i)^techvedas\\.dsu@gmail\\.com$')) ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation for User entity
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'email', 'role', 'createdAt']) &&
+        data.keys().hasOnly(['id', 'email', 'displayName', 'photoURL', 'role', 'createdAt', 'lastLoginAt']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.email is string && data.email.size() <= 150 &&
+        data.role in ['admin', 'member'] &&
+        data.createdAt is string && data.createdAt.size() <= 50 &&
+        (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+        (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500)) &&
+        (!('lastLoginAt' in data) || (data.lastLoginAt is string && data.lastLoginAt.size() <= 50));
+    }
+
+    // Validation for LoginRecord entity
+    function isValidLogin(data) {
+      return data.keys().hasAll(['id', 'userId', 'email', 'role', 'loggedInAt']) &&
+        data.keys().hasOnly(['id', 'userId', 'email', 'displayName', 'role', 'loginMethod', 'loggedInAt']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.userId == request.auth.uid &&
+        data.email is string && data.email.size() <= 150 &&
+        data.role in ['admin', 'member'] &&
+        data.loggedInAt is string && data.loggedInAt.size() <= 50 &&
+        (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+        (!('loginMethod' in data) || (data.loginMethod is string && data.loginMethod.size() <= 50));
+    }
+
+    // Validation for EventRegistration entity
+    function isValidRegistration(data) {
+      return data.keys().hasAll(['id', 'userId', 'userEmail', 'userName', 'eventId', 'eventTitle', 'registeredAt']) &&
+        data.keys().hasOnly(['id', 'userId', 'userEmail', 'userName', 'eventId', 'eventTitle', 'registeredAt']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.userId == request.auth.uid &&
+        data.userEmail is string && data.userEmail.size() <= 150 &&
+        data.userName is string && data.userName.size() <= 100 &&
+        data.eventId is string && data.eventId.size() <= 100 &&
+        data.eventTitle is string && data.eventTitle.size() <= 200 &&
+        data.registeredAt is string && data.registeredAt.size() <= 50;
+    }
+
+    // Validation for ContactMessage entity
+    function isValidMessage(data) {
+      return data.keys().hasAll(['id', 'name', 'email', 'subject', 'message', 'createdAt']) &&
+        data.keys().hasOnly(['id', 'name', 'email', 'subject', 'message', 'createdAt']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+        data.email is string && data.email.size() > 0 && data.email.size() <= 150 &&
+        data.subject is string && data.subject.size() > 0 && data.subject.size() <= 200 &&
+        data.message is string && data.message.size() >= 10 && data.message.size() <= 2000 &&
+        data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    // Test connection doc for validating client connection
+    match /test/connection {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow get: if isSignedIn() && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && isValidUser(incoming()) && (
+        incoming().role == 'member' || isAdmin()
+      );
+      allow update: if (isOwner(userId) || isAdmin()) && isValidUser(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().createdAt == existing().createdAt &&
+        (isAdmin() || incoming().role == existing().role);
+      allow delete: if isAdmin();
+    }
+
+    // Admins Collection
+    match /admins/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Logins Collection (User authentication log)
+    match /logins/{loginId} {
+      allow get: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (isAdmin() || (resource.data.userId == request.auth.uid));
+      allow create: if isSignedIn() && isValidLogin(incoming()) && incoming().userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // Event Registrations Collection
+    match /registrations/{registrationId} {
+      allow get: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (isAdmin() || (resource.data.userId == request.auth.uid));
+      allow create: if isSignedIn() && isValidRegistration(incoming()) && incoming().userId == request.auth.uid;
+      allow update: if false;
+      allow delete: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+    }
+
+    // Contact Messages Collection
+    match /messages/{messageId} {
+      allow get, list: if isAdmin();
+      allow create: if isValidMessage(incoming());
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+  }
+}
